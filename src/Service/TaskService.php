@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Task;
+use App\Entity\User;
 use App\Enum\TaskPriority;
 use App\Enum\TaskStatus;
 use App\Repository\TaskRepository;
@@ -29,7 +30,7 @@ class TaskService
                 throw new \InvalidArgumentException("Invalid status value: {$filters['status']}");
             }
         }
-        // TODO: Add more filters (priority, ownerId, date ranges etc.)
+        // TODO: Add more filters (priority, owner, date ranges etc.) - Note: Filter by User object now, not ID.
 
         // Basic sorting example
         $orderBy = [];
@@ -48,33 +49,44 @@ class TaskService
         return $this->taskRepository->find($id);
     }
 
-    public function createTask(array $data): Task
+    public function createTask(array $data, User $owner): Task
     {
         $task = new Task();
         $task->setTitle($data['title']);
         $task->setDescription($data['description'] ?? null);
 
-        if (isset($data['dueAt'])) {
-            $task->setDueAt(new \DateTimeImmutable($data['dueAt']));
-        }
-        if (isset($data['priority'])) {
-            $task->setPriority(TaskPriority::from($data['priority']));
-        }
-        if (isset($data['status'])) {
-            $task->setStatus(TaskStatus::from($data['status']));
-        }
-        if (isset($data['position'])) {
-            $task->setPosition((int)$data['position']);
-        }
+        // Set the owner directly from the authenticated user passed in
+        $task->setOwner($owner);
 
-        if (isset($data['ownerId'])) {
-            $owner = $this->userRepository->find($data['ownerId']);
-            if ($owner) {
-                $task->setOwner($owner);
-            } else {
-                throw new \InvalidArgumentException("Owner with ID {$data['ownerId']} not found.");
+        if (isset($data['dueAt'])) {
+            // Add validation or proper exception handling for date format
+            try {
+                 $task->setDueAt(new \DateTimeImmutable($data['dueAt']));
+            } catch (\Exception $e) {
+                 throw new \InvalidArgumentException("Invalid date format for dueAt: {$data['dueAt']}");
             }
         }
+        if (isset($data['priority'])) {
+            try {
+                $task->setPriority(TaskPriority::from($data['priority']));
+            } catch (\ValueError $e) {
+                 throw new \InvalidArgumentException("Invalid priority value: {$data['priority']}");
+            }
+        }
+        if (isset($data['status'])) {
+             try {
+                $task->setStatus(TaskStatus::from($data['status']));
+             } catch (\ValueError $e) {
+                 throw new \InvalidArgumentException("Invalid status value: {$data['status']}");
+             }
+        }
+        if (isset($data['position'])) {
+             if (!is_numeric($data['position'])) {
+                 throw new \InvalidArgumentException("Invalid position value: must be a number.");
+             }
+            $task->setPosition((int)$data['position']);
+        }
+        
         // TODO: Handle tags if necessary
 
         $this->entityManager->persist($task);
@@ -92,53 +104,60 @@ class TaskService
 
         // Handle fields present in data
         if (array_key_exists('title', $data)) {
+             if (empty($data['title'])) { // Add basic validation
+                 throw new \InvalidArgumentException("Title cannot be empty.");
+             }
             $task->setTitle($data['title']);
         } elseif ($isPut) {
-            // PUT requires all fields or set to null/default if applicable
             throw new \InvalidArgumentException("Missing required field: title for PUT request.");
         }
 
         if (array_key_exists('description', $data)) {
             $task->setDescription($data['description']);
         } elseif ($isPut) {
-            $task->setDescription(null);
+            $task->setDescription(null); // Allow null description for PUT
         }
 
         if (array_key_exists('dueAt', $data)) {
-            $task->setDueAt($data['dueAt'] ? new \DateTimeImmutable($data['dueAt']) : null);
+            try {
+                 $task->setDueAt($data['dueAt'] ? new \DateTimeImmutable($data['dueAt']) : null);
+            } catch (\Exception $e) {
+                 throw new \InvalidArgumentException("Invalid date format for dueAt: {$data['dueAt']}");
+            }
         } elseif ($isPut) {
-             throw new \InvalidArgumentException("Missing required field: dueAt for PUT request.");
+             // Decide if dueAt is mandatory for PUT or can be null
+             $task->setDueAt(null); 
+             // OR: throw new \InvalidArgumentException("Missing required field: dueAt for PUT request.");
         }
 
         if (array_key_exists('priority', $data)) {
-            $task->setPriority(TaskPriority::from($data['priority']));
+             try {
+                $task->setPriority(TaskPriority::from($data['priority']));
+            } catch (\ValueError $e) {
+                 throw new \InvalidArgumentException("Invalid priority value: {$data['priority']}");
+            }
         } elseif ($isPut) {
-            // Assuming MEDIUM is the default or required
-            $task->setPriority(TaskPriority::MEDIUM);
+            $task->setPriority(TaskPriority::MEDIUM); // Default for PUT if not provided
         }
 
         if (array_key_exists('status', $data)) {
-            $task->setStatus(TaskStatus::from($data['status']));
+             try {
+                $task->setStatus(TaskStatus::from($data['status']));
+             } catch (\ValueError $e) {
+                 throw new \InvalidArgumentException("Invalid status value: {$data['status']}");
+             }
         } elseif ($isPut) {
-            // Assuming PENDING is the default or required
-             $task->setStatus(TaskStatus::PENDING);
+            $task->setStatus(TaskStatus::PENDING); // Default for PUT if not provided
         }
 
         if (array_key_exists('position', $data)) {
+             if (!is_numeric($data['position'])) {
+                 throw new \InvalidArgumentException("Invalid position value: must be a number.");
+             }
             $task->setPosition((int)$data['position']);
         } elseif ($isPut) {
-             throw new \InvalidArgumentException("Missing required field: position for PUT request.");
-        }
-
-        if (array_key_exists('ownerId', $data)) {
-            $owner = $this->userRepository->find($data['ownerId']);
-            if ($owner) {
-                $task->setOwner($owner);
-            } else {
-                 throw new \InvalidArgumentException("Owner with ID {$data['ownerId']} not found.");
-            }
-        } elseif ($isPut) {
-             throw new \InvalidArgumentException("Missing required field: ownerId for PUT request.");
+             // Decide if position is mandatory for PUT or has a default
+             throw new \InvalidArgumentException("Missing required field: position for PUT request."); // Or set a default
         }
 
         // TODO: Handle tags update (add/remove)

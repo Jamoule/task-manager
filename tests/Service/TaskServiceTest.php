@@ -82,6 +82,18 @@ class TaskServiceTest extends TestCase
         $this->taskService->getTasks(['status' => 'invalid-status']);
     }
 
+    public function testGetTasksWithInvalidPriorityFilter(): void
+    {
+        // Assuming you might add priority filter later
+        $this->markTestIncomplete('Priority filter test not implemented yet.');
+    }
+
+    public function testGetTasksWithOwnerFilter(): void
+    {
+        // Assuming you might add owner filter later
+        $this->markTestIncomplete('Owner filter test not implemented yet.');
+    }
+
     public function testGetTaskFound(): void
     {
         $taskId = 1;
@@ -111,8 +123,8 @@ class TaskServiceTest extends TestCase
 
     public function testCreateTaskSuccess(): void
     {
-        $ownerId = 10;
-        $owner = (new User()); // Mock or real user entity
+        // Create a mock User object for the owner
+        $owner = $this->createMock(User::class); 
         $taskData = [
             'title' => 'New Task',
             'description' => 'Description here',
@@ -120,68 +132,66 @@ class TaskServiceTest extends TestCase
             'priority' => 'high',
             'status' => 'in_progress',
             'position' => 1,
-            'ownerId' => $ownerId,
+            // ownerId is no longer in the input data
         ];
 
-        $this->userRepository->expects($this->once())
-            ->method('find')
-            ->with($ownerId)
-            ->willReturn($owner);
+        // No longer need to mock userRepository->find
+        // $this->userRepository->expects($this->never())->method('find');
 
         $this->entityManager->expects($this->once())
             ->method('persist')
             ->with($this->callback(function (Task $task) use ($taskData, $owner) {
                 $this->assertEquals($taskData['title'], $task->getTitle());
                 $this->assertEquals($taskData['description'], $task->getDescription());
+                // Use try-catch for DateTimeImmutable comparison if needed
                 $this->assertEquals(new \DateTimeImmutable($taskData['dueAt']), $task->getDueAt());
                 $this->assertEquals(TaskPriority::HIGH, $task->getPriority());
                 $this->assertEquals(TaskStatus::IN_PROGRESS, $task->getStatus());
                 $this->assertEquals($taskData['position'], $task->getPosition());
-                $this->assertSame($owner, $task->getOwner());
+                // Assert that the correct owner object was set
+                $this->assertSame($owner, $task->getOwner()); 
                 return true;
             }));
 
         $this->entityManager->expects($this->once())->method('flush');
 
-        $createdTask = $this->taskService->createTask($taskData);
+        // Call createTask with data and the owner object
+        $createdTask = $this->taskService->createTask($taskData, $owner);
 
-        // Assertions on the returned task (optional, as we assert during persist)
         $this->assertInstanceOf(Task::class, $createdTask);
         $this->assertEquals($taskData['title'], $createdTask->getTitle());
+        $this->assertSame($owner, $createdTask->getOwner());
     }
-
-    public function testCreateTaskOwnerNotFound(): void
+    
+    public function testCreateTaskWithInvalidData(): void
     {
-        $ownerId = 999;
+        $owner = $this->createMock(User::class);
         $taskData = [
-            'title' => 'Task with missing owner',
-            'ownerId' => $ownerId,
+            'title' => 'Valid Title',
+            'priority' => 'invalid-priority', // Invalid enum value
         ];
-
-        $this->userRepository->expects($this->once())
-            ->method('find')
-            ->with($ownerId)
-            ->willReturn(null);
-
+        
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid priority value: invalid-priority');
+        
         $this->entityManager->expects($this->never())->method('persist');
         $this->entityManager->expects($this->never())->method('flush');
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Owner with ID {$ownerId} not found.");
-
-        $this->taskService->createTask($taskData);
+        
+        $this->taskService->createTask($taskData, $owner);
     }
 
     public function testUpdateTaskPatchSuccess(): void
     {
         $taskId = 1;
-        $ownerId = 11;
-        $newOwner = (new User());
-        $task = (new Task())->setTitle('Original Title'); // Assume task exists
+        $originalOwner = $this->createMock(User::class); // Original owner
+        $task = (new Task())
+            ->setTitle('Original Title')
+            ->setOwner($originalOwner); // Assume task exists with an owner
+            
         $updateData = [
             'title' => 'Updated Title',
-            'status' => 'done',
-            'ownerId' => $ownerId,
+            'status' => 'completed', // Use the correct string value for input
+            // ownerId is no longer passed or used for updates
         ];
 
         $this->taskRepository->expects($this->once())
@@ -189,10 +199,8 @@ class TaskServiceTest extends TestCase
             ->with($taskId)
             ->willReturn($task);
 
-        $this->userRepository->expects($this->once())
-            ->method('find')
-            ->with($ownerId)
-            ->willReturn($newOwner);
+        // No longer expect userRepository->find for owner update
+        // $this->userRepository->expects($this->never())->method('find');
 
         $this->entityManager->expects($this->once())->method('flush');
 
@@ -200,17 +208,18 @@ class TaskServiceTest extends TestCase
 
         $this->assertSame($task, $updatedTask);
         $this->assertEquals('Updated Title', $updatedTask->getTitle());
-        $this->assertEquals(TaskStatus::DONE, $updatedTask->getStatus());
-        $this->assertSame($newOwner, $updatedTask->getOwner());
-        // Description, dueAt etc. should remain unchanged from original task object
+        // Compare with the correct Enum case after update
+        $this->assertEquals(TaskStatus::COMPLETED, $updatedTask->getStatus()); 
+        // Assert that the owner remains unchanged
+        $this->assertSame($originalOwner, $updatedTask->getOwner()); 
     }
 
     public function testUpdateTaskPutSuccess(): void
     {
         $taskId = 2;
-        $ownerId = 12;
-        $owner = (new User());
-        $task = (new Task()); // Assume task exists
+        $originalOwner = $this->createMock(User::class);
+        $task = (new Task())->setOwner($originalOwner); // Assume task exists with an owner
+        
         $updateData = [
             'title' => 'Full Update Title',
             'description' => 'Full Desc',
@@ -218,18 +227,16 @@ class TaskServiceTest extends TestCase
             'priority' => 'low',
             'status' => 'pending',
             'position' => 5,
-            'ownerId' => $ownerId,
+             // ownerId is no longer passed or used for updates
         ];
 
         $this->taskRepository->expects($this->once())
             ->method('find')
             ->with($taskId)
             ->willReturn($task);
-
-        $this->userRepository->expects($this->once())
-            ->method('find')
-            ->with($ownerId)
-            ->willReturn($owner);
+            
+        // No longer expect userRepository->find for owner update
+        // $this->userRepository->expects($this->never())->method('find');
 
         $this->entityManager->expects($this->once())->method('flush');
 
@@ -242,7 +249,8 @@ class TaskServiceTest extends TestCase
         $this->assertEquals(TaskPriority::LOW, $updatedTask->getPriority());
         $this->assertEquals(TaskStatus::PENDING, $updatedTask->getStatus());
         $this->assertEquals($updateData['position'], $updatedTask->getPosition());
-        $this->assertSame($owner, $updatedTask->getOwner());
+         // Assert that the owner remains unchanged
+        $this->assertSame($originalOwner, $updatedTask->getOwner());
     }
 
     public function testUpdateTaskNotFound(): void
@@ -261,10 +269,13 @@ class TaskServiceTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function testUpdateTaskPutMissingField(): void
+    public function testUpdateTaskPutMissingRequiredField(): void
     {
         $taskId = 3;
-        $task = (new Task());
+        $task = new Task();
+        $originalOwner = $this->createMock(User::class);
+        $task->setOwner($originalOwner);
+        
         $updateData = ['description' => 'Only description']; // Missing title, required for PUT
 
         $this->taskRepository->expects($this->once())
@@ -275,34 +286,32 @@ class TaskServiceTest extends TestCase
         $this->entityManager->expects($this->never())->method('flush');
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Missing required field: title for PUT request.');
+        // The exact message depends on which field check comes first in your updated service logic
+        $this->expectExceptionMessage('Missing required field: title for PUT request.'); 
 
         $this->taskService->updateTask($taskId, $updateData, true);
     }
 
-    public function testUpdateTaskInvalidOwner(): void
+    public function testUpdateTaskWithInvalidData(): void
     {
-        $taskId = 4;
-        $ownerId = 888;
-        $task = (new Task());
-        $updateData = ['ownerId' => $ownerId];
+        $taskId = 5;
+        $task = new Task();
+        $originalOwner = $this->createMock(User::class);
+        $task->setOwner($originalOwner);
+
+        $updateData = ['status' => 'invalid-status']; // Invalid enum value
 
         $this->taskRepository->expects($this->once())
             ->method('find')
             ->with($taskId)
             ->willReturn($task);
 
-        $this->userRepository->expects($this->once())
-            ->method('find')
-            ->with($ownerId)
-            ->willReturn(null);
-
         $this->entityManager->expects($this->never())->method('flush');
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Owner with ID {$ownerId} not found.");
+        $this->expectExceptionMessage('Invalid status value: invalid-status');
 
-        $this->taskService->updateTask($taskId, $updateData);
+        $this->taskService->updateTask($taskId, $updateData, false); // PATCH
     }
 
     public function testDeleteTaskSuccess(): void
