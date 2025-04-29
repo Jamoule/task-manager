@@ -18,7 +18,15 @@ RUN apk add --no-cache \
     icu-dev \
     oniguruma-dev \
     libxml2-dev \
-    && docker-php-ext-install intl pdo pdo_mysql opcache mbstring xml \
+    postgresql-dev \
+    && docker-php-ext-install \
+    intl \
+    pdo \
+    pdo_pgsql \
+    pgsql \
+    opcache \
+    mbstring \
+    xml \
     && rm -rf /var/cache/apk/*
 
 # Copier l’app optimisée

@@ -4,7 +4,5 @@ controllers:
         namespace: App\Controller
     type: attribute
 
-# Add this route definition for JWT login
 api_login_check:
-    path: /api/login_check
-    methods: [POST]
+    path: /api/login
