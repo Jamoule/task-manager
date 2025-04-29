@@ -58,7 +58,7 @@ class Tag
     {
         if (!$this->tasks->contains($task)) {
             $this->tasks->add($task);
-            $task->addTag($this); // Ensure the owning side is updated
+            $task->addTag($this); // Assure la synchronisation côté Task
         }
 
         return $this;
@@ -67,7 +67,7 @@ class Tag
     public function removeTask(Task $task): static
     {
         if ($this->tasks->removeElement($task)) {
-            $task->removeTag($this); // Ensure the owning side is updated
+            $task->removeTag($this); // Assure la synchronisation côté Task
         }
 
         return $this;
@@ -75,6 +75,6 @@ class Tag
 
     public function __toString(): string
     {
-        return $this->name ?? '';
+        return $this->name ?? ''; // Utile pour les formulaires
     }
 } 
