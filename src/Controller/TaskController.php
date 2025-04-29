@@ -11,6 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Bundle\SecurityBundle\Security;
+use App\Entity\User;
 
 #[Route('/api/tasks')]
 final class TaskController extends AbstractController
@@ -18,7 +20,8 @@ final class TaskController extends AbstractController
     public function __construct(
         private readonly TaskService $taskService,
         private readonly SerializerInterface $serializer,
-        private readonly ValidatorInterface $validator
+        private readonly ValidatorInterface $validator,
+        private readonly Security $security
     ) {
     }
 
@@ -30,14 +33,20 @@ final class TaskController extends AbstractController
             return $this->json(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
         }
 
-        if (!isset($data['title']) || !isset($data['ownerId'])) { 
-             return $this->json(['message' => 'Missing required fields: title, ownerId'], Response::HTTP_BAD_REQUEST);
+        if (!isset($data['title'])) {
+             return $this->json(['message' => 'Missing required field: title'], Response::HTTP_BAD_REQUEST);
+        }
+
+        /** @var User|null $currentUser */
+        $currentUser = $this->security->getUser();
+
+        if (!$currentUser) {
+            return $this->json(['message' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
         }
 
         try {
-            $task = $this->taskService->createTask($data);
-            $jsonTask = $this->serializer->serialize($task, 'json', ['groups' => 'task:read']); 
-            return new JsonResponse($jsonTask, Response::HTTP_CREATED, [], true); 
+            $task = $this->taskService->createTask($data, $currentUser);
+            return $this->json(['success' => true], Response::HTTP_CREATED);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {

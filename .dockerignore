@@ -1,0 +1,21 @@
+# Ignore version control folders
+.git/
+.github/
+
+# Ignore Composer dependencies
+vendor/
+
+# Ignore build artifacts and cache
+var/
+build/
+
+# Ignore IDE and OS files
+.idea/
+.vscode/
+*.DS_Store
+
+/var
+/vendor
+.git
+node_modules
+.env.local
