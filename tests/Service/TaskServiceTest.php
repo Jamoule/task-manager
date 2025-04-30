@@ -12,12 +12,14 @@ use App\Service\TaskService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Log\LoggerInterface;
 
 class TaskServiceTest extends TestCase
 {
     private MockObject|TaskRepository $taskRepository;
     private MockObject|EntityManagerInterface $entityManager;
     private MockObject|UserRepository $userRepository;
+    private MockObject|LoggerInterface $logger;
     private TaskService $taskService;
 
     protected function setUp(): void
@@ -27,11 +29,13 @@ class TaskServiceTest extends TestCase
         $this->taskRepository = $this->createMock(TaskRepository::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->userRepository = $this->createMock(UserRepository::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->taskService = new TaskService(
             $this->taskRepository,
             $this->entityManager,
-            $this->userRepository
+            $this->userRepository,
+            $this->logger
         );
     }
 
@@ -80,18 +84,6 @@ class TaskServiceTest extends TestCase
         $this->taskRepository->expects($this->never())->method('findBy');
 
         $this->taskService->getTasks(['status' => 'invalid-status']);
-    }
-
-    public function testGetTasksWithInvalidPriorityFilter(): void
-    {
-        // Assuming you might add priority filter later
-        $this->markTestIncomplete('Priority filter test not implemented yet.');
-    }
-
-    public function testGetTasksWithOwnerFilter(): void
-    {
-        // Assuming you might add owner filter later
-        $this->markTestIncomplete('Owner filter test not implemented yet.');
     }
 
     public function testGetTaskFound(): void

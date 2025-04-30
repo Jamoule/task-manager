@@ -4,46 +4,63 @@ on:
   push:
     branches:
       - main
-      - feature/monitoring2
   pull_request:
 
 jobs:
-  build:
+  test:
+    name: 🧪 Run Tests & Generate Coverage
     runs-on: ubuntu-latest
 
     steps:
       - name: 📥 Checkout du code
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup PHP et extensions
+      - name: 🧰 Setup PHP et extensions (incl. pcov)
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pcov
+          coverage: pcov
 
       - name: 📦 Installation des dépendances Composer
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: 🧪 Lancer les tests Symfony
+      - name: 🧪 Lancer les tests Symfony avec couverture
         run: |
-          php bin/phpunit
+          php -d pcov.enabled=1 bin/phpunit --coverage-clover=coverage.xml
+
+      - name: 📤 Upload rapport de couverture
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  build_docker:
+    name: 🐳 Build Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🐳 Build Docker image de l'app (prod)
+        run: |
+          docker build -t task-manager .
 
   monitoring:
-    needs: build
+    name: 📊 Deploy Monitoring Stack
+    needs: build_docker
     runs-on: ubuntu-latest
 
     steps:
       - name: 📥 Récupération du code
         uses: actions/checkout@v3
 
-      - name: 🔧 Setup Docker
-        uses: docker/setup-buildx-action@v2
-
-      - name: 🐳 Build Docker image de l'app
-        run: |
-          docker build -t task-manager .
-
-      - name: 📊 Lancer Prometheus
+      - name: �� Lancer Prometheus
         run: |
           docker run -d \
             --name prometheus \
