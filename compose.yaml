@@ -31,6 +31,13 @@ services:
       - ./:/app:ro,delegated
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - nginx_logs:/var/log/nginx
+    command: >
+        sh -c "
+          mkdir -p /var/log/nginx && \
+          touch /var/log/nginx/access.log /var/log/nginx/error.log && \
+          chown -R nginx:nginx /var/log/nginx && \
+          nginx -g 'daemon off;'
+        "
     depends_on:
       - php
 
