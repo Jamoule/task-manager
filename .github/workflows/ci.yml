@@ -9,8 +9,26 @@ on:
     branches:
       - main
       - feature/monitoring2
+
 jobs:
   build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v3
+
+      - name: 🧰 Setup PHP et extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+
+      - name: 📦 Installation des dépendances Composer
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+  test:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -26,15 +44,22 @@ jobs:
 
       - name: 📊 Lancer Prometheus
         run: |
-          mkdir -p /tmp/prometheus
-          cp monitoring/prometheus.yml /tmp/prometheus/prometheus.yml
-          docker run -d --name prometheus -p 9090:9090 \
-            -v /tmp/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
+          docker run -d \
+            --name prometheus \
+            -p 9090:9090 \
+            -v ${{ github.workspace }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml \
             prom/prometheus
 
       - name: 📈 Lancer Grafana
         run: |
-          docker run -d --name grafana -p 3000:3000 grafana/grafana
+          docker run -d \
+            --name grafana \
+            -p 3000:3000 \
+            grafana/grafana
 
       - name: ✅ Vérification conteneurs
         run: docker ps -a
+
+      - name: 🧪 Lancer les tests Symfony
+        run: |
+          php bin/phpunit
