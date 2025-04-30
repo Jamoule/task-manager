@@ -1,0 +1,17 @@
+{
+	"ulid": "01JT2CFP60G4KZQE5F7M8Z63SF",
+	"minTime": 1745971917919,
+	"maxTime": 1745978400000,
+	"stats": {
+		"numSamples": 1278,
+		"numSeries": 426,
+		"numChunks": 426
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01JT2CFP60G4KZQE5F7M8Z63SF"
+		]
+	},
+	"version": 1
+}
