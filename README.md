@@ -1,5 +1,7 @@
 # Task Manager API
 
+[![Code Coverage](.github/badges/coverage.svg)](./.github/badges/coverage.svg)
+
 Un projet d'API Symfony conteneurisée avec Docker Compose, exposant des métriques pour Prometheus et Grafana.
 
 ---

@@ -10,6 +10,8 @@ jobs:
   test:
     name: 🧪 Run Tests & Generate Coverage
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: 📥 Checkout du code
@@ -29,7 +31,19 @@ jobs:
         run: |
           php -d pcov.enabled=1 bin/phpunit --coverage-clover=coverage.xml
 
-      - name: 📤 Upload rapport de couverture
+      - name: ⚙️ Configure Git User
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+
+      - name: ✨ Générer et commiter le badge de couverture
+        uses: MaikelInput/phpunit-coverage-badge@v1.1.3
+        with:
+          path: coverage.xml
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_message: "chore: Update coverage badge [skip ci]"
+
+      - name: 📤 Upload rapport de couverture (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -60,7 +74,7 @@ jobs:
       - name: 📥 Récupération du code
         uses: actions/checkout@v3
 
-      - name: �� Lancer Prometheus
+      - name: 📈 Lancer Prometheus
         run: |
           docker run -d \
             --name prometheus \
