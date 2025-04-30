@@ -1,0 +1,62 @@
+name: CI Task Manager
+
+on:
+  push:
+    branches:
+      - main
+      - feature/monitoring2
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v3
+
+      - name: 🧰 Setup PHP et extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+
+      - name: 📦 Installation des dépendances Composer
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: 🧪 Lancer les tests Symfony
+        run: |
+          php bin/phpunit
+
+  monitoring:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Récupération du code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Setup Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🐳 Build Docker image de l'app
+        run: |
+          docker build -t task-manager .
+
+      - name: 📊 Lancer Prometheus
+        run: |
+          docker run -d \
+            --name prometheus \
+            -p 9090:9090 \
+            -v ${{ github.workspace }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml \
+            prom/prometheus
+
+      - name: 📈 Lancer Grafana
+        run: |
+          docker run -d \
+            --name grafana \
+            -p 3000:3000 \
+            grafana/grafana
+
+      - name: ✅ Vérification conteneurs
+        run: docker ps -a
