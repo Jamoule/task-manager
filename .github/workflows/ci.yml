@@ -27,7 +27,8 @@ jobs:
           docker run -d \
             --name prometheus \
             -p 9090:9090 \
-            -v ${{ github.workspace }}/prometheus.yml:/etc/prometheus/prometheus.yml \
+            -v ${{ github.workspace }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
             prom/prometheus
 
       - name: 📈 Lancer Grafana
