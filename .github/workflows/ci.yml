@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - prometheus
+      - feature/monitoring2
   pull_request:
 
 jobs:
