@@ -22,7 +22,7 @@ jobs:
         run: |
           docker build -t task-manager .
 
-           - name: 📊 Lancer Prometheus
+      - name: 📊 Lancer Prometheus
         run: |
           mkdir -p /tmp/prometheus
           cp monitoring/prometheus.yml /tmp/prometheus/prometheus.yml
@@ -30,11 +30,9 @@ jobs:
             -v /tmp/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
             prom/prometheus
 
-
-            - name: 📈 Lancer Grafana
+      - name: 📈 Lancer Grafana
         run: |
           docker run -d --name grafana -p 3000:3000 grafana/grafana
-
 
       - name: ✅ Vérification conteneurs
         run: docker ps -a
