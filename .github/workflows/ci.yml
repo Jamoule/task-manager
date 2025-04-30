@@ -29,7 +29,7 @@ jobs:
 
       - name: 🧪 Lancer les tests Symfony avec couverture
         run: |
-          php -d pcov.enabled=1 bin/phpunit --coverage-clover=coverage.xml
+          php -d pcov.enabled=1 bin/phpunit --coverage-clover=clover.xml
 
       - name: ⚙️ Configure Git User
         run: |
@@ -37,7 +37,7 @@ jobs:
           git config user.email "<>"
 
       - name: ✨ Générer et commiter le badge de couverture
-        uses: MaikelInput/phpunit-coverage-badge@v1.1.3
+        uses: timkrase/phpunit-coverage-badge@v1.2.1
         with:
           path: coverage.xml
           repo_token: ${{ secrets.GITHUB_TOKEN }}
