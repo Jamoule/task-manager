@@ -1,0 +1,27 @@
+name: PHP CS Fixer
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  php-cs-fixer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Using the lowest version compatible with your composer.json
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite # Add extensions as needed
+          coverage: none # Disable code coverage tools unless needed
+
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Run PHP CS Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.dist.php 
