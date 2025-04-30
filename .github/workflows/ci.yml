@@ -29,7 +29,7 @@ jobs:
 
       - name: 🧪 Lancer les tests Symfony avec couverture
         run: |
-          php -d pcov.enabled=1 bin/phpunit --coverage-clover=coverage.xml
+          php -d pcov.enabled=1 bin/phpunit --coverage-clover=clover.xml
 
       - name: ⚙️ Configure Git User
         run: |
