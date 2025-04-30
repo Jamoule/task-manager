@@ -1,0 +1,66 @@
+monolog:
+    handlers:
+        main:
+            type: fingers_crossed # Buffers logs until an action_level message is reached
+            action_level: error # Log everything (buffered) when an error occurs
+            handler: nested
+            buffer_size: 50 # How many messages to buffer
+        nested:
+            type: rotating_file
+            path: "%kernel.logs_dir%/%kernel.environment%.log"
+            level: debug # Log all levels when triggered by fingers_crossed
+            max_files: 10
+        # Log errors to stderr in console commands / when using symfony server:start
+        console:
+            type: console
+            process_psr_3_messages: false
+            channels: ["!event", "!doctrine", "!console"]
+
+when@dev:
+    monolog:
+        handlers:
+            main:
+                type: stream # Log directly to the file in dev
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: debug # Log everything in dev
+                # Use rotating_file if you prefer daily files even in dev
+                # type: rotating_file
+                # path: "%kernel.logs_dir%/%kernel.environment%.log"
+                # level: debug
+                # max_files: 10
+            console:
+                type:   console
+                process_psr_3_messages: false
+                channels: ["!event", "!doctrine", "!console"]
+
+when@test:
+    monolog:
+        handlers:
+            main:
+                type: fingers_crossed 
+                action_level: error
+                handler: nested
+                excluded_http_codes: [404, 405]
+            nested:
+                type: stream
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: debug
+
+when@prod:
+    monolog:
+        handlers:
+            main:
+                type: fingers_crossed
+                action_level: error # Only trigger full logging on error
+                handler: nested
+                excluded_http_codes: [404, 405] # Add it here too
+            nested:
+                type: rotating_file # Use daily rotating files in prod
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: debug # Log all levels (incl. INFO/WARNING) once triggered
+                max_files: 10 # Keep logs for 10 days
+            console:
+                type: console # Log errors to stderr in prod console
+                process_psr_3_messages: false
+                channels: ["!event", "!doctrine", "!console"]
+                level: error # Only log errors in prod console output

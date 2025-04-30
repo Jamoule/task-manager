@@ -30,6 +30,14 @@ services:
     volumes:
       - ./:/app:ro,delegated
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_logs:/var/log/nginx
+    command: >
+        sh -c "
+          mkdir -p /var/log/nginx && \
+          touch /var/log/nginx/access.log /var/log/nginx/error.log && \
+          chown -R nginx:nginx /var/log/nginx && \
+          nginx -g 'daemon off;'
+        "
     depends_on:
       - php
 
@@ -111,7 +119,7 @@ services:
   grafana:
     image: grafana/grafana:10.2.0
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: "admin"
       DS_PROMETHEUS: "Prometheus"
@@ -122,6 +130,31 @@ services:
     depends_on:
       - prometheus
       
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      # Mount the application log directory
+      - ./:/app:ro 
+      - nginx_logs:/var/log/nginx:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+      - php # Ensure php container (and its logs) exists
+    restart: unless-stopped
+
 volumes:
   database_data:
   grafana_data:
+  nginx_logs: {}
