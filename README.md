@@ -14,6 +14,7 @@ Un projet d'API Symfony conteneurisée avec Docker Compose, exposant des métriq
 - **nginx-exporter** : métriques Nginx via `stub_status`  
 - **Prometheus** : collecte et stockage des métriques  
 - **Grafana** : visualisation et dashboards  
+- **Loki** : Accès aux logs de l'application Symfony
 
 ---
 
@@ -93,8 +94,9 @@ Une fois l'initialisation terminée, les services sont accessibles :
 - Nginx-exporter : http://localhost:9113/metrics  
 - Prometheus : http://localhost:9090  
 - Grafana : http://localhost:3000  
-  - Identifiants par défaut : `admin` / `admin`  
+  - Identifiants par défaut : `admin` / `admin` (ou le mot de passe défini dans `compose.yaml` sous `GF_SECURITY_ADMIN_PASSWORD`)
   - Changez le mot de passe à la première connexion.
+- Loki : Accessible via Grafana (port `3100` exposé mais utilisé par Promtail et Grafana)
 
 ---
 
@@ -123,14 +125,28 @@ Une fois l'initialisation terminée, les services sont accessibles :
 
 - Vérifiez vos targets dans Prometheus :  
   **Status → Targets**  
+- Accédez à Grafana : http://localhost:3000
+- Explorez les données :
+  - Utilisez la section **Explore** dans Grafana.
+  - Sélectionnez la source de données **Prometheus** pour les métriques.
+  - Sélectionnez la source de données **Loki** pour les logs de l'application Symfony.
 - Exemple de requêtes PromQL :
   ```promql
   nginx_connections_active
   rate(container_cpu_usage_seconds_total[1m])
   ```
+- Exemple de requêtes LogQL (dans Grafana > Explore > Loki) :
+  ```logql
+  {job="symfony_logs"}                              # Voir tous les logs de l'application
+  {job="symfony_logs"} |= "error"                   # Filtrer les logs contenant "error"
+  {job="symfony_logs"} | json | level = `info`      # Si vos logs sont en JSON, filtrez par niveau
+  rate({job="symfony_logs"}[5m])                    # Taux de logs sur 5 minutes
+  ```
 - Importez des dashboards Grafana :
   - "NGINX Full"
   - "Docker & system monitoring"
+- Dashboards pré-provisionnés :
+  - Vérifiez le dossier `grafana/provisioning/dashboards`. Des dashboards peuvent y être ajoutés pour être automatiquement importés.
 
 ---
 
