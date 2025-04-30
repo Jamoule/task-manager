@@ -6,7 +6,9 @@ on:
       - main
       - feature/monitoring2
   pull_request:
-
+    branches:
+      - main
+      - feature/monitoring2
 jobs:
   build:
     runs-on: ubuntu-latest
