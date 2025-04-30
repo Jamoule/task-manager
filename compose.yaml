@@ -30,6 +30,7 @@ services:
     volumes:
       - ./:/app:ro,delegated
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_logs:/var/log/nginx
     depends_on:
       - php
 
@@ -139,6 +140,7 @@ services:
       - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
       # Mount the application log directory
       - ./:/app:ro 
+      - nginx_logs:/var/log/nginx:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
@@ -148,3 +150,4 @@ services:
 volumes:
   database_data:
   grafana_data:
+  nginx_logs: {}

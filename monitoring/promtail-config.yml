@@ -14,5 +14,12 @@ scrape_configs:
       - targets:
           - localhost
         labels:
-          job: symfony_logs # Label for the job
-          __path__: /app/var/log/*.log # Path to Symfony logs inside the Promtail container 
+          job: symfony_logs
+          __path__: /app/var/log/*.log 
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx_logs
+          __path__: /var/log/nginx/*.log
