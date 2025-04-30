@@ -1,15 +1,3 @@
-name: CI Task Manager
-
-on:
-  push:
-    branches:
-      - main
-      - feature/monitoring2
-  pull_request:
-    branches:
-      - main
-      - feature/monitoring2
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -59,6 +47,9 @@ jobs:
 
       - name: ✅ Vérification conteneurs
         run: docker ps -a
+
+      - name: 📦 Installation des dépendances Composer
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: 🧪 Lancer les tests Symfony
         run: |
