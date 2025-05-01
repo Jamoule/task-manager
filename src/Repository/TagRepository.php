@@ -22,4 +22,4 @@ class TagRepository extends ServiceEntityRepository
     }
 
     // Ajoutez ici des méthodes personnalisées si nécessaire
-} 
+}

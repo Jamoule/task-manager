@@ -18,7 +18,7 @@ class AuthController extends AbstractController
     public function __construct(
         private readonly UserService $userService,
         private readonly JWTTokenManagerInterface $jwtManager,
-        private readonly SerializerInterface $serializer
+        private readonly SerializerInterface $serializer,
     ) {
     }
 
@@ -26,7 +26,7 @@ class AuthController extends AbstractController
     public function register(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        if ($data === null) {
+        if (null === $data) {
             return $this->json(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -36,11 +36,12 @@ class AuthController extends AbstractController
         // Handle potential errors from userService
         if (!$result instanceof User) {
             if (isset($result['validation_errors'])) {
-                 return $this->json(['success' => false, 'message' => 'Validation failed', 'errors' => $result['validation_errors']], Response::HTTP_BAD_REQUEST);
+                return $this->json(['success' => false, 'message' => 'Validation failed', 'errors' => $result['validation_errors']], Response::HTTP_BAD_REQUEST);
             } elseif (isset($result['error'])) {
-                $statusCode = ($result['error'] === 'Email already exists.') 
-                                ? Response::HTTP_CONFLICT 
+                $statusCode = ('Email already exists.' === $result['error'])
+                                ? Response::HTTP_CONFLICT
                                 : Response::HTTP_BAD_REQUEST;
+
                 return $this->json(['success' => false, 'message' => $result['error']], $statusCode);
             } else {
                 return $this->json(['success' => false, 'message' => 'An unexpected error occurred during registration.'], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -55,12 +56,12 @@ class AuthController extends AbstractController
         $jsonUser = $this->serializer->serialize($user, 'json', ['groups' => 'user:read']);
 
         return new JsonResponse([
-            'success' => true, 
+            'success' => true,
             'token' => $token,
-            'user' => json_decode($jsonUser) // Decode the JSON string to embed the object
+            'user' => json_decode($jsonUser), // Decode the JSON string to embed the object
         ], Response::HTTP_CREATED);
     }
 
     // You might want to add a separate /api/login endpoint here later
     // using username/password to generate a token for existing users.
-} 
+}
