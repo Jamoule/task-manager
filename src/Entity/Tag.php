@@ -77,4 +77,4 @@ class Tag
     {
         return $this->name ?? ''; // Utile pour les formulaires
     }
-} 
+}

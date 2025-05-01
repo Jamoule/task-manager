@@ -2,17 +2,16 @@
 
 namespace App\Controller;
 
-use App\Entity\Task;
+use App\Entity\User;
 use App\Service\TaskService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Bundle\SecurityBundle\Security;
-use App\Entity\User;
 
 #[Route('/api/tasks')]
 final class TaskController extends AbstractController
@@ -21,7 +20,7 @@ final class TaskController extends AbstractController
         private readonly TaskService $taskService,
         private readonly SerializerInterface $serializer,
         private readonly ValidatorInterface $validator,
-        private readonly Security $security
+        private readonly Security $security,
     ) {
     }
 
@@ -29,12 +28,12 @@ final class TaskController extends AbstractController
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        if ($data === null) {
+        if (null === $data) {
             return $this->json(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
         }
 
         if (!isset($data['title'])) {
-             return $this->json(['message' => 'Missing required field: title'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => 'Missing required field: title'], Response::HTTP_BAD_REQUEST);
         }
 
         /** @var User|null $currentUser */
@@ -46,6 +45,7 @@ final class TaskController extends AbstractController
 
         try {
             $task = $this->taskService->createTask($data, $currentUser);
+
             return $this->json(['success' => true], Response::HTTP_CREATED);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
@@ -64,6 +64,7 @@ final class TaskController extends AbstractController
 
             $tasks = $this->taskService->getTasks($filters, $sortBy, $order);
             $jsonTasks = $this->serializer->serialize($tasks, 'json', ['groups' => 'task:read']);
+
             return new JsonResponse($jsonTasks, Response::HTTP_OK, [], true);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
@@ -80,8 +81,9 @@ final class TaskController extends AbstractController
         if (!$task) {
             return $this->json(['message' => 'Task not found'], Response::HTTP_NOT_FOUND);
         }
-        
+
         $jsonTask = $this->serializer->serialize($task, 'json', ['groups' => 'task:read']);
+
         return new JsonResponse($jsonTask, Response::HTTP_OK, [], true);
     }
 
@@ -89,7 +91,7 @@ final class TaskController extends AbstractController
     public function updatePut(int $id, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        if ($data === null) {
+        if (null === $data) {
             return $this->json(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -99,6 +101,7 @@ final class TaskController extends AbstractController
                 return $this->json(['message' => 'Task not found'], Response::HTTP_NOT_FOUND);
             }
             $jsonTask = $this->serializer->serialize($task, 'json', ['groups' => 'task:read']);
+
             return new JsonResponse($jsonTask, Response::HTTP_OK, [], true);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
@@ -111,7 +114,7 @@ final class TaskController extends AbstractController
     public function updatePatch(int $id, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-         if ($data === null) {
+        if (null === $data) {
             return $this->json(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -121,6 +124,7 @@ final class TaskController extends AbstractController
                 return $this->json(['message' => 'Task not found'], Response::HTTP_NOT_FOUND);
             }
             $jsonTask = $this->serializer->serialize($task, 'json', ['groups' => 'task:read']);
+
             return new JsonResponse($jsonTask, Response::HTTP_OK, [], true);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
@@ -137,8 +141,9 @@ final class TaskController extends AbstractController
             if (!$success) {
                 return $this->json(['message' => 'Task not found'], Response::HTTP_NOT_FOUND);
             }
+
             return $this->json(null, Response::HTTP_NO_CONTENT);
-         } catch (\Exception $e) {
+        } catch (\Exception $e) {
             return $this->json(['message' => 'An error occurred while deleting the task.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -29,13 +29,13 @@ class Task
     #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $dueAt = null;
 
-    #[ORM\Column(type: 'string', length: 50, enumType: TaskPriority::class, options: ["default" => TaskPriority::MEDIUM])]
+    #[ORM\Column(type: 'string', length: 50, enumType: TaskPriority::class, options: ['default' => TaskPriority::MEDIUM])]
     private ?TaskPriority $priority = null;
 
     #[ORM\Column(type: 'integer')]
     private ?int $position = null;
 
-    #[ORM\Column(type: 'string', length: 50, enumType: TaskStatus::class, options: ["default" => TaskStatus::PENDING])]
+    #[ORM\Column(type: 'string', length: 50, enumType: TaskStatus::class, options: ['default' => TaskStatus::PENDING])]
     private ?TaskStatus $status = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
@@ -45,13 +45,13 @@ class Task
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
-    #[ORM\JoinColumn(name: "owner_id", referencedColumnName: "id", nullable: false)]
+    #[ORM\JoinColumn(name: 'owner_id', referencedColumnName: 'id', nullable: false)]
     private ?User $owner = null;
 
     #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'tasks')]
     #[ORM\JoinTable(name: 'tasks_tags')]
-    #[ORM\JoinColumn(name: "task_id", referencedColumnName: "id", onDelete: "CASCADE")]
-    #[ORM\InverseJoinColumn(name: "tag_id", referencedColumnName: "id", onDelete: "CASCADE")]
+    #[ORM\JoinColumn(name: 'task_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     private Collection $tags;
 
     public function __construct()

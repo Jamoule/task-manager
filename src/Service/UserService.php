@@ -14,7 +14,7 @@ class UserService
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly UserRepository $userRepository,
-        private readonly ValidatorInterface $validator
+        private readonly ValidatorInterface $validator,
     ) {
     }
 
@@ -32,7 +32,7 @@ class UserService
 
         $user = new User();
         $user->setEmail($data['email']);
-        
+
         // TODO: Add role setting if needed
         // $user->setRoles(['ROLE_USER']);
 
@@ -42,14 +42,15 @@ class UserService
             $data['password']
         );
         $user->setPassword($hashedPassword);
-        
+
         // Optional: Validate the User entity before persisting
         $errors = $this->validator->validate($user);
         if (count($errors) > 0) {
             $errorMessages = [];
             foreach ($errors as $violation) {
-                 $errorMessages[$violation->getPropertyPath()][] = $violation->getMessage();
+                $errorMessages[$violation->getPropertyPath()][] = $violation->getMessage();
             }
+
             return ['validation_errors' => $errorMessages];
         }
 
@@ -58,4 +59,4 @@ class UserService
 
         return $user;
     }
-} 
+}
