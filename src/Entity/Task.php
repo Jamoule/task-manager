@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
@@ -18,30 +19,39 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['task:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['task:read'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['task:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private ?\DateTimeImmutable $dueAt = null;
+    #[Groups(['task:read'])]
+    private \DateTimeImmutable $dueAt;
 
     #[ORM\Column(type: 'string', length: 50, enumType: TaskPriority::class, options: ['default' => TaskPriority::MEDIUM])]
+    #[Groups(['task:read'])]
     private ?TaskPriority $priority = null;
 
     #[ORM\Column(type: 'integer')]
+    #[Groups(['task:read'])]
     private ?int $position = null;
 
     #[ORM\Column(type: 'string', length: 50, enumType: TaskStatus::class, options: ['default' => TaskStatus::PENDING])]
+    #[Groups(['task:read'])]
     private ?TaskStatus $status = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['task:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['task:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
@@ -61,6 +71,7 @@ class Task
         $this->updatedAt = new \DateTimeImmutable();
         $this->priority = TaskPriority::MEDIUM;
         $this->status = TaskStatus::PENDING;
+        $this->dueAt = new \DateTimeImmutable();
     }
 
     #[ORM\PreUpdate]
@@ -98,7 +109,7 @@ class Task
         return $this;
     }
 
-    public function getDueAt(): ?\DateTimeImmutable
+    public function getDueAt(): \DateTimeImmutable
     {
         return $this->dueAt;
     }

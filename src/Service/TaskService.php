@@ -25,31 +25,31 @@ class TaskService
     {
         $this->logger->info('Fetching tasks', ['filters' => $filters, 'sortBy' => $sortBy, 'order' => $order]);
 
-        // Basic filtering example (by status)
+        // Filtering logic
         $criteria = [];
         if (isset($filters['status'])) {
             $statusEnum = TaskStatus::tryFrom($filters['status']);
             if (null === $statusEnum) {
                 $this->logger->warning('Invalid status filter value provided', ['status' => $filters['status']]);
-                // Handle invalid status filter
                 throw new \InvalidArgumentException("Invalid status value: {$filters['status']}");
             }
             $criteria['status'] = $statusEnum;
         }
-        // TODO: Add more filters (priority, owner, date ranges etc.) - Note: Filter by User object now, not ID.
+        // TODO: Implement other filters (priority, owner, etc.) in criteria array
 
-        // Basic sorting example
+        // Sorting logic
         $orderBy = [];
-        if ($sortBy && in_array($sortBy, ['createdAt', 'dueAt', 'priority', 'title', 'position'])) {
+        $validSortFields = ['createdAt', 'dueAt', 'priority', 'title', 'position'];
+        if ($sortBy && in_array($sortBy, $validSortFields)) {
             $direction = 'DESC' === strtoupper($order) ? 'DESC' : 'ASC';
             $orderBy[$sortBy] = $direction;
         } else {
-            $sortBy = 'createdAt'; // Update sortBy for logging
-            $orderBy[$sortBy] = 'ASC'; // Default sort
-            $this->logger->info('Using default sorting', ['sortBy' => $sortBy, 'order' => 'ASC']);
+            $orderBy['createdAt'] = 'ASC'; // Default sort
         }
 
-        $tasks = $this->taskRepository->findBy($criteria, $orderBy);
+        // Use the custom repository method
+        $tasks = $this->taskRepository->findTasksFilteredAndSorted($criteria, $orderBy);
+
         $this->logger->info('Tasks fetched successfully', ['count' => count($tasks)]);
 
         return $tasks;
@@ -162,22 +162,27 @@ class TaskService
 
         if (array_key_exists('dueAt', $data)) {
             try {
-                $newDate = $data['dueAt'] ? new \DateTimeImmutable($data['dueAt']) : null;
-                if ($task->getDueAt() != $newDate) { // DateTimeImmutable comparison needs care, != might work here
+                // Ensure $data['dueAt'] is not null before creating DateTimeImmutable
+                if (null === $data['dueAt']) {
+                    // This case should not happen if PUT requires dueAt, but handle defensively for PATCH
+                    throw new \InvalidArgumentException('dueAt cannot be null.');
+                }
+                $newDate = new \DateTimeImmutable($data['dueAt']);
+                if ($task->getDueAt() != $newDate) { // DateTimeImmutable comparison needs care
                     $task->setDueAt($newDate);
                     $updated = true;
                 }
+            } catch (\InvalidArgumentException $e) {
+                 // Re-throw argument exceptions directly
+                throw $e;
             } catch (\Exception $e) {
                 $this->logger->warning('Invalid date format for dueAt during task update', ['id' => $id, 'dueAt' => $data['dueAt'], 'exception' => $e->getMessage()]);
                 throw new \InvalidArgumentException("Invalid date format for dueAt: {$data['dueAt']}");
             }
         } elseif ($isPut) {
-            // Decide if dueAt is mandatory for PUT or can be null
-            if (null !== $task->getDueAt()) {
-                $task->setDueAt(null);
-                $updated = true;
-            }
-            // OR: throw new \InvalidArgumentException("Missing required field: dueAt for PUT request.");
+            // Since dueAt is not nullable, it's mandatory for PUT
+            $this->logger->warning('Missing required field: dueAt for PUT request', ['id' => $id]);
+            throw new \InvalidArgumentException('Missing required field: dueAt for PUT request.');
         }
 
         if (array_key_exists('priority', $data)) {

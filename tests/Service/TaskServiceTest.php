@@ -48,8 +48,8 @@ class TaskServiceTest extends TestCase
         $tasks = [$task1, $task2];
 
         $this->taskRepository->expects($this->once())
-            ->method('findBy')
-            ->with([], ['createdAt' => 'ASC']) // Default sort
+            ->method('findTasksFilteredAndSorted')
+            ->with([], ['createdAt' => 'ASC'])
             ->willReturn($tasks);
 
         $result = $this->taskService->getTasks();
@@ -60,7 +60,7 @@ class TaskServiceTest extends TestCase
     {
         $task1 = (new Task())->setTitle('Filtered Task');
         $tasks = [$task1];
-        $filters = ['status' => 'pending']; // Use string value as passed from controller
+        $filters = ['status' => 'pending'];
         $sortBy = 'title';
         $order = 'DESC';
 
@@ -68,7 +68,7 @@ class TaskServiceTest extends TestCase
         $expectedOrderBy = ['title' => 'DESC'];
 
         $this->taskRepository->expects($this->once())
-            ->method('findBy')
+            ->method('findTasksFilteredAndSorted')
             ->with($expectedCriteria, $expectedOrderBy)
             ->willReturn($tasks);
 
@@ -81,7 +81,7 @@ class TaskServiceTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid status value: invalid-status');
 
-        $this->taskRepository->expects($this->never())->method('findBy');
+        $this->taskRepository->expects($this->never())->method('findTasksFilteredAndSorted');
 
         $this->taskService->getTasks(['status' => 'invalid-status']);
     }
