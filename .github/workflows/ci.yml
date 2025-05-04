@@ -20,16 +20,29 @@ jobs:
       - name: 🧰 Setup PHP et extensions (incl. pcov)
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pcov
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_pgsql, pcov
           coverage: pcov
+
+      - name: 🐳 Démarrage des services de test Docker Compose
+        run: docker compose -f docker-compose.test.yml up -d --wait
 
       - name: 📦 Installation des dépendances Composer
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
+      - name: 🧱 Création du schéma de la BDD de test
+        run: |
+          php bin/console doctrine:database:drop --env=test --force --if-exists
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:schema:create --env=test
+        env:
+          APP_ENV: test
+
       - name: 🧪 Lancer les tests Symfony avec couverture
         run: |
           php -d pcov.enabled=1 bin/phpunit --coverage-clover=clover.xml
+        env:
+          APP_ENV: test
 
       - name: ⚙️ Configure Git User
         run: |
@@ -48,6 +61,10 @@ jobs:
         with:
           name: coverage-report
           path: coverage.xml
+
+      - name: 🧹 Arrêt des services de test Docker Compose
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v --remove-orphans
 
   build_docker:
     name: 🐳 Build Docker Image

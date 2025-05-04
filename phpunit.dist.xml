@@ -22,6 +22,11 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <testsuites>
+    <testsuite name="integration">
+        <directory>tests/Integration</directory>
+    </testsuite>
+    </testsuites>
 
     <source ignoreSuppressionOfDeprecations="true" restrictNotices="true" restrictWarnings="true">
         <include>
