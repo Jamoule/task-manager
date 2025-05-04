@@ -21,6 +21,12 @@
         <testsuite name="Project Test Suite">
             <directory>tests</directory>
         </testsuite>
+        <!-- Définition de la suite de tests d'intégration -->
+        <testsuite name="integration">
+            <directory>tests/Controller</directory>
+            <directory>tests/Service</directory>
+        </testsuite>
+        <!-- Vous pouvez ajouter d'autres suites de tests au besoin -->
     </testsuites>
 
     <coverage processUncoveredFiles="true">

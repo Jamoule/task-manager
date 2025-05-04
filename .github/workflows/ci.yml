@@ -36,11 +36,11 @@ jobs:
         # Prépare la base en mode test avant PHPUnit :contentReference[oaicite:9]{index=9}
 
       - name: 🧪 Lancer les tests d'intégration
-        run: php -d pcov.enabled=1 bin/phpunit --testsuite=integration --coverage-clover=clover.xml
+        run: php -d pcov.enabled=1 bin/phpunit --coverage-clover=clover.xml
         env:
           APP_ENV: test
           DATABASE_URL: "postgresql://testuser:testpassword@localhost:5433/task_manager_test?serverVersion=15&charset=utf8"
-        # Exécute uniquement la suite "integration" définie dans phpunit.xml.dist :contentReference[oaicite:10]{index=10}
+        # Exécute tous les tests disponibles, car la suite integration est maintenant correctement définie :contentReference[oaicite:10]{index=10}
 
       - name: 🧹 Arrêt et nettoyage des services
         if: always()
