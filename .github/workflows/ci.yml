@@ -13,6 +13,10 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      APP_ENV: test
+      DATABASE_URL: "postgresql://testuser:testpassword@127.0.0.1:5433/task_manager_test"
+
     steps:
       - name: 📥 Checkout du code
         uses: actions/checkout@v3
@@ -20,21 +24,31 @@ jobs:
       - name: 🧰 Setup PHP et extensions (incl. pcov)
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pcov
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_pgsql, pcov
           coverage: pcov
 
-      - name: 📦 Installation des dépendances Composer
+      - name: 🐳 Démarrage du conteneur Postgres
+        run: docker compose -f docker-compose.test.yml up -d --wait
+
+      - name: 📦 Installation des dépendances
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: 🧪 Lancer les tests Symfony avec couverture
+      - name: 🧱 Initialisation de la BDD de test
         run: |
-          php -d pcov.enabled=1 bin/phpunit --coverage-clover=clover.xml
+          php bin/console doctrine:database:drop --env=test --force --if-exists
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:schema:create --env=test
+          # Si besoin de fixtures :
+          # php bin/console doctrine:fixtures:load --env=test --no-interaction
+
+      - name: 🧪 Lancer les tests Symfony avec couverture
+        run: php -d pcov.enabled=1 bin/phpunit --coverage-clover=coverage.xml
 
       - name: ⚙️ Configure Git User
         run: |
           git config user.name "GitHub Actions Bot"
-          git config user.email "<>"
+          git config user.email "actions@github.com"
 
       - name: ✨ Générer et commiter le badge de couverture
         uses: timkrase/phpunit-coverage-badge@v1.2.1
@@ -49,6 +63,10 @@ jobs:
           name: coverage-report
           path: coverage.xml
 
+      - name: 🧹 Arrêt des services Docker Compose
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v --remove-orphans
+
   build_docker:
     name: 🐳 Build Docker Image
     needs: test
@@ -62,8 +80,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: 🐳 Build Docker image de l'app (prod)
-        run: |
-          docker build -t task-manager .
+        run: docker build -t task-manager .
 
   monitoring:
     name: 📊 Deploy Monitoring Stack
@@ -71,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Récupération du code
+      - name: 📥 Checkout du code
         uses: actions/checkout@v3
 
       - name: 📈 Lancer Prometheus

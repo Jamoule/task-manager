@@ -1,0 +1,6 @@
+# It's often safe to leave this file empty for testing
+# Test environment services override defaults in services.yaml
+# Symfony's test container usually makes services accessible
+
+services:
+  # You might need specific test-only services here later

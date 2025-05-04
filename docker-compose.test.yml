@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db_test:
+    image: postgres:15-alpine
+    ports:
+      # utile si vous voulez vous connecter depuis l'hôte sur le port 5433
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: task_manager_test
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # pour persister les données entre deux runs, décommentez :
+    # volumes:
+    #   - db_test_data:/var/lib/postgresql/data
+
+# Si vous avez décommenté le volume ci-dessus :
+# volumes:
+#   db_test_data:

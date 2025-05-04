@@ -25,7 +25,6 @@ Un projet d'API Symfony conteneurisée avec Docker Compose, exposant des métriq
 - **Git** (recommandé pour cloner le projet)
 - **Docker** (>= 20.10)  
 - **Docker Compose** (>= 1.29)  
-- (Optionnel) Git  
 
 ---
 
@@ -152,52 +151,43 @@ Une fois l'initialisation terminée, les services sont accessibles :
 
 ---
 
+## ✨ Développement et Qualité de Code
+
+### Style de Code (PHP CS Fixer)
+
+Ce projet utilise [PHP CS Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) pour maintenir un style de code cohérent. La configuration se trouve dans `.php-cs-fixer.dist.php`.
+
+- **Vérifier le style** (sans appliquer les changements) :
+  ```bash
+  # Depuis la racine du projet (ou dans le conteneur php)
+  ./vendor/bin/php-cs-fixer fix src --dry-run --diff
+  ```
+
+- **Corriger automatiquement le style** :
+  ```bash
+  # Depuis la racine du projet (ou dans le conteneur php)
+  ./vendor/bin/php-cs-fixer fix src
+  ```
+
+Un workflow GitHub Actions (`.github/workflows/php-cs-fixer.yml`) vérifie également le style de code à chaque push/pull request sur la branche principale.
+
+### Tests (PHPUnit)
+
+Les tests unitaires et d'intégration sont écrits avec [PHPUnit](https://phpunit.de/).
+
+- **Exécuter tous les tests** :
+  ```bash
+  # Depuis la racine du projet (ou dans le conteneur php)
+  ./vendor/bin/phpunit
+  ```
+  *Note : Assurez-vous que votre base de données de test (`app_test` par défaut) est créée et à jour. Vous pouvez utiliser les commandes suivantes si nécessaire :*
+  ```bash
+  php bin/console doctrine:database:create --env=test --if-not-exists
+  php bin/console doctrine:schema:update --force --env=test
+  ```
+
+---
+
 ## 🗂 Structure du projet
 
 ```
-├── .env.example
-├── .env
-├── composer.json
-├── Dockerfile
-├── docker-compose.yml
-├── docker/
-│   └── nginx/
-│       └── conf.d/
-│           └── default.conf
-├── config/          # Ajout potentiel si lexik:jwt:generate-keypair crée des clés ici
-│   └── jwt/
-│       ├── private.pem
-│       └── public.pem
-├── monitoring/
-│   └── prometheus.yml
-├── public/
-├── src/
-├── var/
-├── vendor/
-└── README.md
-```
-*Note : Le dossier `config/jwt/` sera créé après la génération des clés.*
-
----
-
-## 🔐 Sécurité & bonnes pratiques
-
-- En **production**, passez `APP_ENV=prod` et assurez-vous que les dépendances de développement ne sont pas installées (`composer install --no-dev`).
-- Utilisez des mots de passe forts et ne commitez pas de secrets directement dans le code. Stockez-les dans `.env` (ignoré par Git) ou mieux, utilisez un gestionnaire de secrets (Vault, variables d'environnement CI/CD).
-- Restreignez l'accès aux endpoints sensibles comme `/nginx_status`. La configuration Nginx fournie le fait déjà pour l'exporter.
-- Configurez Alertmanager pour être notifié des problèmes potentiels détectés par Prometheus.
-
----
-
-## 📖 Ressources
-
-- [Symfony Documentation](https://symfony.com/doc/current/)  
-- [LexikJWTAuthenticationBundle](https://github.com/lexik/LexikJWTAuthenticationBundle)  
-- [Prometheus Official](https://prometheus.io/)  
-- [Grafana Dashboards](https://grafana.com/grafana/dashboards)  
-- [cAdvisor GitHub](https://github.com/google/cadvisor)  
-- [nginx-exporter GitHub](https://github.com/nginxinc/nginx-prometheus-exporter)  
-
----
-
-> **Bon monitoring !** 🚀
