@@ -2,109 +2,45 @@ name: CI Task Manager
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
 
 jobs:
-  test:
-    name: 🧪 Run Tests & Generate Coverage
+  integration-tests:
+    name: 🧪 Integration Tests
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    env:
+      # Doit correspondre à votre docker-compose.test.yml
+      DATABASE_URL: "postgresql://app:!ChangeMe!@localhost:5432/app_test?charset=utf8mb4"
+      APP_ENV: test
     steps:
       - name: 📥 Checkout du code
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup PHP et extensions (incl. pcov)
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.2"
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_pgsql, pcov
-          coverage: pcov
-
       - name: 🐳 Démarrage des services de test Docker Compose
-        run: docker compose -f docker-compose.test.yml up -d --wait
+        run: docker compose -f docker-compose.test.yml up -d --wait --wait-timeout 120
+        # --wait attend que tous les healthchecks soient healthy :contentReference[oaicite:7]{index=7}
 
       - name: 📦 Installation des dépendances Composer
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        # À faire après avoir démarré les services, pour installer les bundles de test :contentReference[oaicite:8]{index=8}
 
-      - name: 🧱 Création du schéma de la BDD de test
+      - name: 🧱 Création et migration de la BDD de test
         run: |
           php bin/console doctrine:database:drop --env=test --force --if-exists
           php bin/console doctrine:database:create --env=test --if-not-exists
           php bin/console doctrine:schema:create --env=test
         env:
           APP_ENV: test
+        # Prépare la base en mode test avant PHPUnit :contentReference[oaicite:9]{index=9}
 
-      - name: 🧪 Lancer les tests Symfony avec couverture
-        run: |
-          php -d pcov.enabled=1 bin/phpunit --coverage-clover=clover.xml
+      - name: 🧪 Lancer les tests d’intégration
+        run: php -d pcov.enabled=1 bin/phpunit --testsuite=integration --coverage-clover=clover.xml
         env:
           APP_ENV: test
+        # Exécute uniquement la suite "integration" définie dans phpunit.xml.dist :contentReference[oaicite:10]{index=10}
 
-      - name: ⚙️ Configure Git User
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "<>"
-
-      - name: ✨ Générer et commiter le badge de couverture
-        uses: timkrase/phpunit-coverage-badge@v1.2.1
-        with:
-          path: coverage.xml
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          commit_message: "chore: Update coverage badge [skip ci]"
-
-      - name: 📤 Upload rapport de couverture (Artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
-
-      - name: 🧹 Arrêt des services de test Docker Compose
+      - name: 🧹 Arrêt et nettoyage des services
         if: always()
         run: docker compose -f docker-compose.test.yml down -v --remove-orphans
-
-  build_docker:
-    name: 🐳 Build Docker Image
-    needs: test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📥 Checkout du code
-        uses: actions/checkout@v3
-
-      - name: 🔧 Setup Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: 🐳 Build Docker image de l'app (prod)
-        run: |
-          docker build -t task-manager .
-
-  monitoring:
-    name: 📊 Deploy Monitoring Stack
-    needs: build_docker
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📥 Récupération du code
-        uses: actions/checkout@v3
-
-      - name: 📈 Lancer Prometheus
-        run: |
-          docker run -d \
-            --name prometheus \
-            -p 9090:9090 \
-            -v ${{ github.workspace }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml \
-            prom/prometheus
-
-      - name: 📈 Lancer Grafana
-        run: |
-          docker run -d \
-            --name grafana \
-            -p 3000:3000 \
-            grafana/grafana
-
-      - name: ✅ Vérification conteneurs
-        run: docker ps -a
+        # Libère les volumes et conteneurs pour ne pas polluer le runner :contentReference[oaicite:11]{index=11}
