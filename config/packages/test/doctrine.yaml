@@ -1,0 +1,8 @@
+doctrine:
+  dbal:
+    # Utilise une variable d'environnement CI pour déterminer le bon host
+    url: "%env(default:database_url_local:DATABASE_URL)%"
+
+parameters:
+  # URL par défaut pour le développement local
+  database_url_local: "postgresql://testuser:testpassword@localhost:5433/task_manager_test?serverVersion=15&charset=utf8"
