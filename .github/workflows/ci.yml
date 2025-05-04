@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_ENV: test
+      # Définition explicite de DATABASE_URL pour GitHub Actions
+      DATABASE_URL: "postgresql://testuser:testpassword@localhost:5433/task_manager_test?serverVersion=15&charset=utf8"
     steps:
       - name: 📥 Checkout du code
         uses: actions/checkout@v3
@@ -30,12 +32,14 @@ jobs:
           php bin/console doctrine:schema:create --env=test
         env:
           APP_ENV: test
+          DATABASE_URL: "postgresql://testuser:testpassword@localhost:5433/task_manager_test?serverVersion=15&charset=utf8"
         # Prépare la base en mode test avant PHPUnit :contentReference[oaicite:9]{index=9}
 
-      - name: 🧪 Lancer les tests d’intégration
+      - name: 🧪 Lancer les tests d'intégration
         run: php -d pcov.enabled=1 bin/phpunit --testsuite=integration --coverage-clover=clover.xml
         env:
           APP_ENV: test
+          DATABASE_URL: "postgresql://testuser:testpassword@localhost:5433/task_manager_test?serverVersion=15&charset=utf8"
         # Exécute uniquement la suite "integration" définie dans phpunit.xml.dist :contentReference[oaicite:10]{index=10}
 
       - name: 🧹 Arrêt et nettoyage des services
