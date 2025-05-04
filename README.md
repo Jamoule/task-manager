@@ -25,7 +25,6 @@ Un projet d'API Symfony conteneurisée avec Docker Compose, exposant des métriq
 - **Git** (recommandé pour cloner le projet)
 - **Docker** (>= 20.10)  
 - **Docker Compose** (>= 1.29)  
-- (Optionnel) Git  
 
 ---
 
