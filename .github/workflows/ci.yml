@@ -10,8 +10,6 @@ jobs:
     name: 🧪 Integration Tests
     runs-on: ubuntu-latest
     env:
-      # Doit correspondre à votre docker-compose.test.yml
-      DATABASE_URL: "postgresql://app:!ChangeMe!@localhost:5432/app_test?charset=utf8mb4"
       APP_ENV: test
     steps:
       - name: 📥 Checkout du code

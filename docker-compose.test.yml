@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: testpassword
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
